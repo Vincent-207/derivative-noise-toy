@@ -3,10 +3,10 @@ using UnityEngine;
 [ExecuteInEditMode]
 public class ComputeHandler1D : MonoBehaviour,ITextureHolder
 {
-    [SerializeField] ComputeShader compute;
+    [SerializeField] public ComputeShader compute;
     [SerializeField] public RenderTexture rt;
-    [SerializeField] Texture2D text;
-    [SerializeField] private float period;
+    [SerializeField] public Texture2D text;
+    [SerializeField] public float period;
     void Start()
     {
         DoProcess();
@@ -19,7 +19,7 @@ public class ComputeHandler1D : MonoBehaviour,ITextureHolder
         RenderCompute();
         text = RenderToTexture2D(rt);
     }
-    void SetupRenderTexture()
+    public virtual void SetupRenderTexture()
     {
         rt = new RenderTexture(256, 1, 0);
         rt.enableRandomWrite = true;
@@ -27,12 +27,12 @@ public class ComputeHandler1D : MonoBehaviour,ITextureHolder
         rt.filterMode = FilterMode.Point;
     }
 
-    void RenderCompute()
+    public virtual void RenderCompute()
     {
         int kernelhandle = compute.FindKernel("CSMain");
         compute.SetTexture(kernelhandle, "Result", rt);
         compute.SetFloat("_Period", period);
-        compute.Dispatch(kernelhandle, 1, 1, 1);
+        compute.Dispatch(kernelhandle, 256, 1, 1);
     }
 
     Texture2D RenderToTexture2D(RenderTexture renderTexture)

@@ -1,0 +1,64 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+float u2f(uint x);
+uint hash(uint x);
+float gradient(int x);
+float2 gradient_noise_wDer_1D(float p);
+float fade_quintic(float t);
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+float _Period;
+RWTexture2D<float4> Result;
+
+[numthreads(1,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here
+    
+    float2 value = gradient_noise_wDer_1D(id.x / _Period);
+    value.y = (value.y + 1.0) / 2.0; // revert domain to [0,1) so it can fit in color value
+    Result[id.xy] = float4(value.y, value.x, 0.0, 1.0);
+     
+    
+}
+
+float2 gradient_noise_wDer_1D(float p)
+{
+    int i = int(floor(p));
+    float g0 = gradient(i);
+    float g1 = gradient(i + 1);
+
+    float f = frac(p);
+    float v0 = g0 * f;
+    float v1 = g1 * (f - 1.0);
+
+    float a = fade_quintic(f);
+    float val = lerp(v0, v1, a);
+
+    float g = lerp(g0, g1, a);
+    float d = v1 - v0;                    // derivative of mix with respect to the interpolant
+    float da = ((f-2.0)*f+1.0)*30.0*f*f;  // fade'(t): derivative of quintic interpolant
+
+    return float2(g + d*da, val);
+}
+
+float fade_quintic(float t) { return ((6.0*t-15.0)*t+10.0)*t*t*t; }
+
+
+float gradient(int x)
+{
+    return u2f(hash(uint(x))) * 2.0 - 1.0;
+}
+
+uint hash(uint x)
+{
+    x = (x ^ (x >> 16)) * 0x21f0aaadU;
+    x = (x ^ (x >> 15)) * 0x735a2d97U;
+    
+    return x ^ (x >> 15);
+}
+
+float u2f(uint x) { return float(x >> 8U) * asfloat(0x33800000U); }
+
+
