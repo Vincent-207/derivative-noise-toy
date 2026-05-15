@@ -1,5 +1,6 @@
 using UnityEngine;
-
+using UnityEngine.Rendering.Universal;
+[ExecuteInEditMode]
 public class FBMHandler2D : ComputeHandler2D
 {
     [Range(0, 3)]
@@ -20,4 +21,6 @@ public class FBMHandler2D : ComputeHandler2D
         compute.SetInt("_Octaves", octaves);
         compute.Dispatch(kernelhandle, 256 / 8, 256 / 8, 1);
     }
+
+    
 }

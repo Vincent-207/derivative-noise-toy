@@ -7,13 +7,22 @@ public class ComputeHandler1D : MonoBehaviour,ITextureHolder
     [SerializeField] public RenderTexture rt;
     [SerializeField] public Texture2D text;
     [SerializeField] public float period;
+    public bool doRender;
     void Start()
     {
         DoProcess();
 
     }
 
-    void DoProcess()
+    public virtual void Update()
+    {
+        if (doRender)
+        {
+            DoProcess();
+            doRender = false;
+        }
+    }
+    public void DoProcess()
     {
         SetupRenderTexture();
         RenderCompute();

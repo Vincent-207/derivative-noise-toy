@@ -4,7 +4,7 @@ public class ComputeHandler2D : ComputeHandler1D
 {
     public override void SetupRenderTexture()
     {
-        rt = new RenderTexture(256, 256, 0);
+        rt = new RenderTexture(256, 256, 32);
         rt.enableRandomWrite = true;
         rt.Create();
         rt.filterMode = FilterMode.Point;

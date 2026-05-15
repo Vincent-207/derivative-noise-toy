@@ -26,7 +26,8 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     // TODO: insert actual code here
     
     float3 value = gradient_noise_2D(float2(id.xy) / _Period);
-    value = (value + 1) /2; // revert domain to [0,1) so it can fit in color value
+    value.z = (value.z + 1) /2; // revert domain to [0,1) so it can fit in color value
+    value.xy = value.xy / 2;
     float2 a = gradient(int2(id.xy));
     Result[id.xy] = float4(value.x, value.y, value.z, 1.0);
     
