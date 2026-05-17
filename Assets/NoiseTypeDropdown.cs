@@ -10,7 +10,10 @@ public class NoiseTypeDropdown : MonoBehaviour
     [SerializeField] private GameObject LineObj;
     [SerializeField]
     INoiseLine noiseLine;
-
+    
+    [SerializeField]
+    FBMControlGroup FBMGroup;
+    NoiseLineType noiseLineType;
     public int lineIndex;
     void Awake()
     {
@@ -32,10 +35,21 @@ public class NoiseTypeDropdown : MonoBehaviour
 
     void UpdateLine(int value)
     {
-        NoiseLineType noiseLineType = (NoiseLineType) value;
+        if (LineObj.activeSelf == false) return;
+        noiseLineType = (NoiseLineType) value;
         noiseLine.UpdateLine(noiseLineType, lineIndex);
         Debug.Log("Changing type: " + Enum.GetName(typeof(NoiseLineType), noiseLineType));
-        
+        FBMGroup.UpdateControls();
+    }
+
+    public bool isFBMNoise()
+    {
+        return isFBMNoise(noiseLineType);
+    }
+    bool isFBMNoise(NoiseLineType noiseLineType)
+    {
+        if((int) noiseLineType >= 6) return true;
+        return false;
     }
 
     void SetupOptions()

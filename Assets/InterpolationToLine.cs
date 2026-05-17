@@ -4,11 +4,11 @@ public class InterpolationToLine : MonoBehaviour
 {
     public void ApplyToLine(Texture2D initial, Texture2D final, float t)
     {
-        Debug.Log("Applying! - " + t);
+        // Debug.Log("Applying! - " + t);
         LineRenderer lineRenderer = GetComponent<LineRenderer>();
         float period = GetComponent<ITextureHolder>().GetPeriod();
         lineRenderer.positionCount = initial.width * initial.height;
-        Debug.Log("Period: " + period);
+        // Debug.Log("Period: " + period);
         for (int index = 0, y = 0; y < initial.height; y++)
         {
             for (int x = 0; x < initial.width; x++)

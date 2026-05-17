@@ -25,4 +25,7 @@ public enum NoiseLineType
     GradientLinear,
     GradientHermite,
     GradientQuintic,
+    GradientFBMLinear,
+    GradientFBMHermite,
+    GradientFBMQuintic,
 }

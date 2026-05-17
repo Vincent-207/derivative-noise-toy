@@ -18,7 +18,7 @@ public class PeriodSlider : MonoBehaviour
         slider = GetComponent<Slider>();
         slider.onValueChanged.AddListener(delegate { UpdatePeriod(slider.value); });
         periodText = GetComponentInChildren<TMP_Text>();
-        Debug.Log("End of awake!");
+        // Debug.Log("End of awake!");
     }
 
     void Start()
@@ -27,10 +27,12 @@ public class PeriodSlider : MonoBehaviour
     }
     public void UpdatePeriod(float a)
     {
-        Debug.Log("Starting update!");
+        // Debug.Log("Starting update!");
+        // if (singleNoiseObj.activeSelf == false) return;
         float period = slider.value * (maxPeriod - basePeriod) + basePeriod;
         if(singleNoiseObj.activeSelf) singleNoiseLine.SetPeriod(period);
-        interpolationNoiseLine.SetPeriod(period);
+        if(interpolationNoiseObj.activeSelf) interpolationNoiseLine.SetPeriod(period);
+        // interpolationNoiseLine.SetPeriod(period);
         periodText.text = "Period: " + Mathf.RoundToInt(period);
     }
 

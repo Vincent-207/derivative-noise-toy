@@ -15,6 +15,11 @@ public class InterpolationToggle : MonoBehaviour
         toggle.onValueChanged.AddListener(delegate { UpdateInterpolation(); });
     }
 
+    void Start()
+    {
+        UpdateInterpolation();
+    }
+
     void DisableInterpolationNoise()
     {
         interpolationNoiseLine.gameObject.SetActive(false);

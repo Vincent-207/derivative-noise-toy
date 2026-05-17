@@ -1,15 +1,19 @@
 using UnityEngine;
 
-public class InterpolationLine : MonoBehaviour, INoiseLine
+public class InterpolationLine : MonoBehaviour, INoiseLine, IFBMHandler
 {
     [SerializeField] ComputesHolder computes;
     [SerializeField]
     ComputeHandler1D initialCompute, finalCompute;
     LineRenderer line;
     SetPosToScreen setPosToScreen;
+    [SerializeField]
     InterpolationToLine interpolationToLine;
     [Range(0,1f)]
     public float interpolationValue;
+
+    [SerializeField] private float lacunarity, gain;
+    [SerializeField] private int octaves;
     void Awake()
     {
         line = GetComponent<LineRenderer>();
@@ -19,12 +23,22 @@ public class InterpolationLine : MonoBehaviour, INoiseLine
 
     void Start()
     {
+        
         UpdateLine();
     }
     public void UpdateLine()
     {
+        initialCompute.SetGain(gain);
+        initialCompute.SetLacunarity(lacunarity);
+        initialCompute.SetOctaves(octaves);
+        
+        finalCompute.SetLacunarity(lacunarity);
+        finalCompute.SetGain(gain);
+        finalCompute.SetOctaves(octaves);
+        
         initialCompute.DoProcess();
         finalCompute.DoProcess();
+        if(interpolationToLine == null) Debug.LogWarning("InterpolationToLine has not been set");
         interpolationToLine.ApplyToLine(initialCompute.text, finalCompute.text, interpolationValue);
         setPosToScreen.UpdatePos();
     }
@@ -52,6 +66,24 @@ public class InterpolationLine : MonoBehaviour, INoiseLine
         {
             finalCompute.compute = computes.GetComputeShader(lineType);
         }
+        UpdateLine();
+    }
+
+    public void SetLacunarity(float lacunarity)
+    {
+        this.lacunarity = lacunarity;
+        UpdateLine();
+    }
+
+    public void SetGain(float gain)
+    {
+        this.gain = gain;
+        UpdateLine();
+    }
+
+    public void SetOctaves(int octaves)
+    {
+        this.octaves = octaves;
         UpdateLine();
     }
 }

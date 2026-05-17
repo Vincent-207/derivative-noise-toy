@@ -1,0 +1,87 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+float u2f(uint x);
+uint hash(uint x);
+float gradient(int x);
+float fade_quintic(float t);
+
+float gradient_noise_1D(float p);
+float FractionalBrownianMotion(float p);
+float sumOfMaxAmplitudes(float a, float n);
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+float _Period;
+float _Lacunarity;
+float _Gain;
+int _Octaves;
+
+RWTexture2D<float4> Result;
+
+[numthreads(1,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here
+    
+    float value = FractionalBrownianMotion(id.x / _Period);
+    float m = sumOfMaxAmplitudes(_Gain, _Octaves);
+    value = (value + m)/(2 * m);
+    // value = (value + 1) /2; // revert domain to [0,1) so it can fit in color value
+    Result[id.xy] = float4(value, value, value, 1.0);
+     
+    
+}
+
+float FractionalBrownianMotion(float p)
+{
+    float sum = 0.0;
+    float amp = 1.0, freq = 1.0;
+    for (int  i = 0; i < _Octaves; i++)
+    {
+        float noise = gradient_noise_1D(p * freq);
+        
+        sum += amp * noise;
+        
+        amp *= _Gain;
+        freq *= _Lacunarity;
+    }
+    return sum;
+}
+
+float gradient_noise_1D(float p)
+{
+    int i = int(floor(p));
+    float g0 = gradient(i);
+    float g1 = gradient(i + 1);
+
+    float f = frac(p);
+    float v0 = g0 * f;
+    float v1 = g1 * (f - 1.0);
+
+    float a = fade_quintic(f);
+    return lerp(v0, v1, a);
+}
+
+float fade_quintic(float t) { return ((6.0*t-15.0)*t+10.0)*t*t*t; }
+
+
+float gradient(int x)
+{
+    return u2f(hash(uint(x))) * 2.0 - 1.0;
+}
+
+uint hash(uint x)
+{
+    x = (x ^ (x >> 16)) * 0x21f0aaadU;
+    x = (x ^ (x >> 15)) * 0x735a2d97U;
+    
+    return x ^ (x >> 15);
+}
+
+float u2f(uint x) { return float(x >> 8U) * asfloat(0x33800000U); }
+
+float sumOfMaxAmplitudes(float a, float n)
+{
+    if (n < 1) n = 1;
+    return ((a * (pow(a, n - 1) - 1) ) / (a - 1)) + 1;
+}

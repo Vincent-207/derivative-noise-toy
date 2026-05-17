@@ -1,14 +1,26 @@
 
+using UnityEditor;
 using UnityEngine;
 
 [RequireComponent(typeof(LineRenderer))]
 public class RenderToLine : MonoBehaviour
 {
+    public bool doApply;
+    
     private void Awake()
     {
         ApplyToLine();
     }
 
+    void Update()
+    {
+        if (doApply)
+        {
+            ApplyToLine();
+            doApply = false;
+        }
+    }
+    
     public void ApplyToLine()
     {
         Texture2D texture2D = GetComponent<ITextureHolder>().GetTexture2D();

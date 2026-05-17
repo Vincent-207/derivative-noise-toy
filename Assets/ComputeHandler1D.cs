@@ -7,6 +7,10 @@ public class ComputeHandler1D : MonoBehaviour,ITextureHolder
     [SerializeField] public RenderTexture rt;
     [SerializeField] public Texture2D text;
     [SerializeField] public float period;
+    [SerializeField]
+    float lacunarity, gain;
+    [SerializeField]
+    private int octaves;
     public bool doRender;
     void Start()
     {
@@ -27,6 +31,7 @@ public class ComputeHandler1D : MonoBehaviour,ITextureHolder
         SetupRenderTexture();
         RenderCompute();
         text = RenderToTexture2D(rt);
+        
     }
     public virtual void SetupRenderTexture()
     {
@@ -41,6 +46,11 @@ public class ComputeHandler1D : MonoBehaviour,ITextureHolder
         int kernelhandle = compute.FindKernel("CSMain");
         compute.SetTexture(kernelhandle, "Result", rt);
         compute.SetFloat("_Period", period);
+        
+        compute.SetFloat("_Gain", gain);
+        compute.SetFloat("_Lacunarity", lacunarity);
+        compute.SetInt("_Octaves", octaves);
+        
         compute.Dispatch(kernelhandle, 256, 1, 1);
     }
 
@@ -63,6 +73,24 @@ public class ComputeHandler1D : MonoBehaviour,ITextureHolder
     public float GetPeriod()
     {
         return period;
+    }
+
+    public void SetLacunarity(float lacunarity)
+    {
+        this.lacunarity = lacunarity; 
+        DoProcess();
+    }
+
+    public void SetGain(float gain)
+    {
+        this.gain = gain;
+        DoProcess();
+    }
+
+    public void SetOctaves(int octaves)
+    {
+        this.octaves = octaves;
+        DoProcess();
     }
 }
 
