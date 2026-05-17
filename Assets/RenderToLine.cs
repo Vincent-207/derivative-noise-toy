@@ -21,7 +21,8 @@ public class RenderToLine : MonoBehaviour
             for (int x = 0; x < texture2D.width; x++)
             {
                int index = x + y * texture2D.width;
-               lineRenderer.SetPosition(index, new Vector3(x / period, texture2D.GetPixel(x, y).r));
+               float height = texture2D.GetPixel(x, y).r * 2f - 1f;
+               lineRenderer.SetPosition(index, new Vector3(x / period, height));
             }
         }
     }

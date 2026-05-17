@@ -26,10 +26,10 @@ public class SetPosToScreen : MonoBehaviour
 
     float getLineDistance(float length, float angle)
     {
-        Debug.Log("L: " + length);
-        Debug.Log("Angle: " + angle);
+        // Debug.Log("L: " + length);
+        // Debug.Log("Angle: " + angle);
         float tanPart = (2 * Mathf.Tan( Mathf.Deg2Rad * (angle/2)));
-        Debug.Log("Tanpart: " + tanPart);
+        // Debug.Log("Tanpart: " + tanPart);
         return length / tanPart;
     }
 
@@ -38,9 +38,9 @@ public class SetPosToScreen : MonoBehaviour
         Camera cam = Camera.main;
         LineRenderer lineRenderer = GetComponent<LineRenderer>();
         float distance = getLineDistance(GetLineLength(lineRenderer), getHorizontalFOV(cam));
-        Debug.Log("Distance: " + distance);
+        // Debug.Log("Distance: " + distance);
         transform.position = cam.ViewportToWorldPoint(new Vector3(0, 0.5f, distance));
-        Debug.Log("Length: " + GetLineLength(lineRenderer));   
+        // Debug.Log("Length: " + GetLineLength(lineRenderer));   
     }
 
 }

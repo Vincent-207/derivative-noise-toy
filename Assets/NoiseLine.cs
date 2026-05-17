@@ -1,7 +1,8 @@
 using UnityEngine;
 
-public class NoiseLine : MonoBehaviour
+public class NoiseLine : MonoBehaviour, INoiseLine
 {
+    public ComputesHolder computes;
     ComputeHandler1D computeHandler;
     LineRenderer line;
     SetPosToScreen setPosToScreen;
@@ -9,10 +10,15 @@ public class NoiseLine : MonoBehaviour
 
     void Awake()
     {
-        computeHandler = GetComponent<ComputeHandler1D>();
         line = GetComponent<LineRenderer>();
         setPosToScreen = GetComponent<SetPosToScreen>();
+        computeHandler = GetComponent<ComputeHandler1D>();
         renderToLine = GetComponent<RenderToLine>();
+    }
+
+    void Start()
+    {
+        UpdateLine();
     }
 
     public void UpdateLine()
@@ -21,9 +27,24 @@ public class NoiseLine : MonoBehaviour
         renderToLine.ApplyToLine();
         setPosToScreen.UpdatePos();
     }
-    public void UpdateLine(float period)
+    public void SetPeriod(float period)
     {
         computeHandler.period = period;
         UpdateLine();
     }
+
+    public void UpdateLine(NoiseLineType lineType, int lineIndex)
+    {
+        computeHandler.compute = computes.GetComputeShader(lineType);
+        UpdateLine();
+    }
+}
+
+
+
+public interface INoiseLine
+{
+    public void SetPeriod(float period);
+    public void UpdateLine();
+    public void UpdateLine(NoiseLineType lineType, int lineIndex);
 }
