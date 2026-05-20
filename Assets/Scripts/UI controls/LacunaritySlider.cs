@@ -29,7 +29,7 @@ public class LacunaritySlider : MonoBehaviour
     void UpdateLacunarity(float portion)
     {
         float lacunarity = min + (max - min) * portion;
-        FBMHandler.SetGain(lacunarity);
+        FBMHandler.SetLacunarity(lacunarity);
         sliderText.text = "Lacunarity: " + lacunarity.ToString("F2");
     }
 }

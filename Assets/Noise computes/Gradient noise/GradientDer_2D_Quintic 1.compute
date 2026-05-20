@@ -55,7 +55,7 @@ float3 gradient_noise_2D(float2 p)
     float2 d = lerp(float2(v1,v2)-v0, v3-float2(v2,v1), a.yx); // derivatives of bmix with respect to the interpolant
     float2 da = ((f-2.0)*f+1.0)*30.0*f*f;
 
-    return float3(g + d*da, v);
+    return float3(v, g + d*da);
     return bilerp(v0, v1, v2, v3, a.x, a.y);
 }
 

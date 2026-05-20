@@ -1,0 +1,129 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+float u2f(uint x);
+
+uint hash(uint x);
+uint hash(uint2 x);
+
+float fade_quintic(float t);
+float2 fade_quintic_2D(float2 p);
+
+float bilerp(float a, float b, float c, float d, float x, float y);
+float tmix(float a,float b,float c,float d,float e,float f,float g,float h,float x,float y,float z);
+float fbm2e(float2 p, int octaves);
+float geometricSum(float G, float n);
+float terrain( float2 p );
+float3 noised(float2 x );
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+float _Period;
+float _Lacunarity;
+float _Gain;
+int _Octaves;
+
+float2 _Offset;
+RWTexture2D<float4> Result;
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here
+    
+    float val = terrain((float2(id.xy) + _Offset) / _Period);
+    float m = geometricSum(_Gain, _Octaves);
+    val += m; val /= 2 * m;
+    Result[id.xy] = float4(val, val, val, 1.0);
+    
+    
+}
+
+static const float2x2 m = float2x2(0.8,-0.6,0.6,0.8);
+
+float terrain( float2 p )
+{
+    float a = 0.0;
+    float b = 1.0;
+    float2  d = float2(0.0,0.0);
+    for( int i=0; i<_Octaves; i++ )
+    {
+        float3 n = noised(p);
+        d += n.yz;
+        a += b*n.x/(1.0+dot(d,d));
+        b *= _Gain;
+        p = mul(m, p)*_Lacunarity;
+    }
+    return a;
+}
+
+// value noise, and its analytical derivatives
+
+float3 noised( float2 x )
+{
+    float2 f = frac(x);
+    #if USE_SMOOTH_NOISE==0
+    float2 u = f*f*(3.0-2.0*f);
+    float2 du = 6.0*f*(1.0-f);
+    #else
+    float2 u = f*f*f*(f*(f*6.0-15.0)+10.0);
+    float2 du = 30.0*f*f*(f*(f-2.0)+1.0);
+    #endif
+
+    #if 1
+    // texel fetch version
+    int2 p = int2(floor(x));
+    float a = u2f(hash(p+int2(0,0))).x;
+    float b = u2f(hash(p+int2(1,0))).x;
+    float c = u2f(hash(p+int2(0,1))).x;
+    float d = u2f(hash(p+int2(1,1))).x;
+    #else    
+    // texture version    
+    vec2 p = floor(x);
+    float a = textureLod( iChannel0, (p+vec2(0.5,0.5))/256.0, 0.0 ).x;
+    float b = textureLod( iChannel0, (p+vec2(1.5,0.5))/256.0, 0.0 ).x;
+    float c = textureLod( iChannel0, (p+vec2(0.5,1.5))/256.0, 0.0 ).x;
+    float d = textureLod( iChannel0, (p+vec2(1.5,1.5))/256.0, 0.0 ).x;
+    #endif
+    
+    return float3(a+(b-a)*u.x+(c-a)*u.y+(a-b-c+d)*u.x*u.y,
+                du*(float2(b-a,c-a)+(a-b-c+d)*u.yx));
+}
+
+float bilerp(float a, float b, float c, float d, float x, float y)
+{
+    return lerp(lerp(a, b, x), lerp(c, d, x), y);
+}
+float fade_quintic(float t) { return ((6.0*t-15.0)*t+10.0)*t*t*t; }
+float2 fade_quintic_2D(float2 p)
+{
+    return float2(fade_quintic(p.x), fade_quintic(p.y));
+}
+
+float gradient(int x)
+{
+    return u2f(hash(uint(x))) * 2.0 - 1.0;
+}
+static const float TAU = 6.283185307179586;
+float2 gradient(int2 x)
+{
+    float angle = u2f(hash(uint2(x))) * TAU;
+    return float2(cos(angle), sin(angle));
+}
+uint hash(uint x)
+{
+    x = (x ^ (x >> 16)) * 0x21f0aaadU;
+    x = (x ^ (x >> 15)) * 0x735a2d97U;
+    
+    return x ^ (x >> 15);
+}
+uint hash(uint2 x) { return hash(x.x ^ hash(x.y)); }  // for 2D input
+uint hash(uint3 x) { return hash(x.x ^ hash(x.yz)); } // for 3D input
+float u2f(uint x) { return float(x >> 8U) * asfloat(0x33800000U); }
+
+float geometricSum(float G, float n) { return ((G * (pow(G, n + 1) - 1)) / (G -1)) + 0.5; }
+
+// #define tmix(a,b,c,d,e,f,g,h,x,y,z) mix(bmix(a,b,c,d,x,y),bmix(e,f,g,h,x,y),z) // trilinear interpolation
+float tmix(float a,float b,float c,float d,float e,float f,float g,float h,float x,float y,float z)
+{
+    return lerp(bilerp(a,b,c,d,x,y), bilerp(e,f,g,h,x,y), z);
+}

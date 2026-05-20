@@ -10,48 +10,29 @@ float gradient(int x);
 float2 gradient(int2 x);
 
 float gradient_noise_2D(float2 p);
-float FractalBrownianMotion(float2 p, int octaves);
 
-float fade_quintic(float t);
-float2 fade_quintic_2D(float2 p);
-float sumOfMaxAmplitudes(float a, float n);
+float fade_hermite(float t);
+float2 fade_hermite_2D(float2 p);
+
 float bilerp(float a, float b, float c, float d, float x, float y);
 // Create a RenderTexture with enableRandomWrite flag and set it
 // with cs.SetTexture
 float _Period;
-float _Lacunarity;
-float _Gain;
-int _Octaves;
+float2 _Offset;
 RWTexture2D<float4> Result;
 
-[numthreads(8,8,1)]
+[numthreads(1,1,1)]
 void CSMain (uint3 id : SV_DispatchThreadID)
 {
     // TODO: insert actual code here
     
-    float value = FractalBrownianMotion(float2(id.xy) / _Period, _Octaves);
-    value += sumOfMaxAmplitudes(_Gain, _Octaves);
-    //sumOfSeries = m. value starts on range [-m, m]. add m to change to [0, 2m]. divide by 2m to get range [0, 1]
-    value /= 2 * sumOfMaxAmplitudes(_Gain, _Octaves);
+    float value = gradient_noise_2D((float2(id.xy) + _Offset) / _Period);
+    value = (value + 1) /2; // revert domain to [0,1) so it can fit in color value
+    float2 a = gradient(int2(id.xy));
     Result[id.xy] = float4(value, value, value, 1.0);
     
 }
 
-float FractalBrownianMotion(float2 p, int octaves)
-{
-    float _Lacunarity = 2.0;
-    float _Gain = 0.5;
-    
-    float sum = 0.0;
-    float amp = 1.0, freq = 1.0;
-    for (int i = 0; i < octaves; i++)
-    {
-        sum += amp * gradient_noise_2D(p * freq);
-        freq *= _Lacunarity;
-        amp *= _Gain;
-    }
-    return sum;
-}
 float gradient_noise_2D(float2 p)
 {
     int2 i = int2(floor(p));
@@ -66,7 +47,7 @@ float gradient_noise_2D(float2 p)
     float v2 = dot(g2, f - float2(0.0, 1.0));
     float v3 = dot(g3, f - float2(1.0, 1.0));
 
-    float2 a = fade_quintic_2D(f);
+    float2 a = fade_hermite_2D(f);
     return bilerp(v0, v1, v2, v3, a.x, a.y);
 }
 
@@ -74,10 +55,11 @@ float bilerp(float a, float b, float c, float d, float x, float y)
 {
     return lerp(lerp(a, b, x), lerp(c, d, x), y);
 }
-float fade_quintic(float t) { return ((6.0*t-15.0)*t+10.0)*t*t*t; }
-float2 fade_quintic_2D(float2 p)
+
+float fade_hermite(float t) {  return (3.0 - 2.0*t)*t*t;}
+float2 fade_hermite_2D(float2 p)
 {
-    return float2(fade_quintic(p.x), fade_quintic(p.y));
+    return float2(fade_hermite(p.x), fade_hermite(p.y));
 }
 
 float gradient(int x)
@@ -100,9 +82,4 @@ uint hash(uint x)
 uint hash(uint2 x) { return hash(x.x ^ hash(x.y)); }  // for 2D input
 float u2f(uint x) { return float(x >> 8U) * asfloat(0x33800000U); }
 
-float sumOfMaxAmplitudes(float a, float n)
-{
-    if (n < 1) n = 1;
-    return ((a * (pow(a, n - 1) - 1) ) / (a - 1)) + 1;
-}
 

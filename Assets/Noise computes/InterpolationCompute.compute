@@ -1,0 +1,19 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWTexture2D<float4> Result;
+RWTexture2D<float4> _Initial;
+RWTexture2D<float4> _Final;
+
+float _Portion;
+[numthreads(1,1,1)]
+void CSMain (uint2 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here!
+    float value = lerp(_Initial[id.xy].r, _Final[id.xy].r, _Portion);
+    float4 output = float4(value, value, value, 1.0);
+    Result[id.xy] = output;
+    
+}

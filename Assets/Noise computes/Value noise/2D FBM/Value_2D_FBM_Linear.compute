@@ -1,0 +1,96 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+float u2f(uint x);
+
+uint hash(uint x);
+uint hash(uint2 x);
+
+float value_noise_2d(float2 p);
+
+
+float FractionalBrownianMotion(float2 p);
+
+float fade_linear(float t);
+float2 fade_linear_2D(float2 p);
+float sumOfMaxAmplitudes(float a, float n);
+float bilerp(float a, float b, float c, float d, float x, float y);
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+float _Period;
+float2 _Offset;
+
+float _Lacunarity;
+float _Gain;
+int _Octaves;
+
+RWTexture2D<float4> Result;
+
+[numthreads(1,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here
+    
+    float value = FractionalBrownianMotion((float2(id.xy) + _Offset) / _Period);
+    float m = sumOfMaxAmplitudes(_Gain, _Octaves);
+    value = (value + m) /(2 * m); // change range from [-m, m] to [0, 1]
+    Result[id.xy] = float4(value, value, value, 1.0);
+    
+}
+
+float FractionalBrownianMotion(float2 p)
+{
+    float sum = 0.0;
+    float amp = 1.0, freq = 1.0;
+    for (int i = 0; i < _Octaves; i++)
+    {
+        float noise = value_noise_2d(p * freq);
+        sum += noise * amp;
+        freq *= _Lacunarity;
+        amp *= _Gain;
+    }
+    
+    return sum;
+}
+
+float value_noise_2d(float2 p)
+{
+    int2 i = int2(floor(p));
+    float2 g0 = u2f(hash(i));
+    float2 g1 = u2f(hash(i + int2(1, 0)));
+    float2 g2 = u2f(hash(i + int2(0, 1)));
+    float2 g3 = u2f(hash(i + int2(1, 1)));
+
+    float2 f = frac(p);
+
+    float2 a = fade_linear_2D(f);
+    return bilerp(g0, g1, g2, g3, a.x, a.y);
+}
+
+float bilerp(float a, float b, float c, float d, float x, float y)
+{
+    return lerp(lerp(a, b, x), lerp(c, d, x), y);
+}
+float fade_linear(float t) { return t; }
+float2 fade_linear_2D(float2 p)
+{
+    return float2(fade_linear(p.x), fade_linear(p.y));
+}
+
+uint hash(uint x)
+{
+    x = (x ^ (x >> 16)) * 0x21f0aaadU;
+    x = (x ^ (x >> 15)) * 0x735a2d97U;
+    
+    return x ^ (x >> 15);
+}
+uint hash(uint2 x) { return hash(x.x ^ hash(x.y)); }  // for 2D input
+float u2f(uint x) { return float(x >> 8U) * asfloat(0x33800000U); }
+
+
+float sumOfMaxAmplitudes(float a, float n)
+{
+    if (n < 1) n = 1;
+    return ((a * (pow(a, n - 1) - 1) ) / (a - 1)) + 1;
+}
+

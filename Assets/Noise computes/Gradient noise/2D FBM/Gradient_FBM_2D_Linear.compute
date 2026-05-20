@@ -1,0 +1,109 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+float u2f(uint x);
+
+uint hash(uint x);
+uint hash(uint2 x);
+
+float gradient(int x);
+float2 gradient(int2 x);
+
+float gradient_noise_2D(float2 p);
+float FractalBrownianMotion(float2 p, int octaves);
+
+float fade_linear(float t);
+float2 fade_linear_2D(float2 p);
+float sumOfMaxAmplitudes(float a, float n);
+float bilerp(float a, float b, float c, float d, float x, float y);
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+float _Period;
+float _Lacunarity;
+float _Gain;
+int _Octaves;
+float2 _Offset;
+RWTexture2D<float4> Result;
+
+[numthreads(8,8,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here
+    
+    float value = FractalBrownianMotion((float2(id.xy) + _Offset) / _Period, _Octaves);
+    value += sumOfMaxAmplitudes(_Gain, _Octaves);
+    //sumOfSeries = m. value starts on range [-m, m]. add m to change to [0, 2m]. divide by 2m to get range [0, 1]
+    value /= 2 * sumOfMaxAmplitudes(_Gain, _Octaves);
+    Result[id.xy] = float4(value, value, value, 1.0);
+    
+}
+
+float FractalBrownianMotion(float2 p, int octaves)
+{
+    // float _Lacunarity = 2.0;
+    // float _Gain = 0.5;
+    
+    float sum = 0.0;
+    float amp = 1.0, freq = 1.0;
+    for (int i = 0; i < octaves; i++)
+    {
+        sum += amp * gradient_noise_2D(p * freq);
+        freq *= _Lacunarity;
+        amp *= _Gain;
+    }
+    return sum;
+}
+float gradient_noise_2D(float2 p)
+{
+    int2 i = int2(floor(p));
+    float2 g0 = gradient(i);
+    float2 g1 = gradient(i + int2(1, 0));
+    float2 g2 = gradient(i + int2(0, 1));
+    float2 g3 = gradient(i + int2(1, 1));
+
+    float2 f = frac(p);
+    float v0 = dot(g0, f);
+    float v1 = dot(g1, f - float2(1.0, 0.0));
+    float v2 = dot(g2, f - float2(0.0, 1.0));
+    float v3 = dot(g3, f - float2(1.0, 1.0));
+
+    float2 a = fade_linear_2D(f);
+    return bilerp(v0, v1, v2, v3, a.x, a.y);
+}
+
+float bilerp(float a, float b, float c, float d, float x, float y)
+{
+    return lerp(lerp(a, b, x), lerp(c, d, x), y);
+}
+float fade_linear(float t) {  return t;}
+float2 fade_linear_2D(float2 p)
+{
+    return float2(fade_linear(p.x), fade_linear(p.y));
+}
+
+float gradient(int x)
+{
+    return u2f(hash(uint(x))) * 2.0 - 1.0;
+}
+static const float TAU = 6.283185307179586;
+float2 gradient(int2 x)
+{
+    float angle = u2f(hash(uint2(x))) * TAU;
+    return float2(cos(angle), sin(angle));
+}
+uint hash(uint x)
+{
+    x = (x ^ (x >> 16)) * 0x21f0aaadU;
+    x = (x ^ (x >> 15)) * 0x735a2d97U;
+    
+    return x ^ (x >> 15);
+}
+uint hash(uint2 x) { return hash(x.x ^ hash(x.y)); }  // for 2D input
+float u2f(uint x) { return float(x >> 8U) * asfloat(0x33800000U); }
+
+float sumOfMaxAmplitudes(float a, float n)
+{
+    if (n < 1) n = 1;
+    return ((a * (pow(a, n - 1) - 1) ) / (a - 1)) + 1;
+}
+

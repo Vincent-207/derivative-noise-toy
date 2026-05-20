@@ -1,0 +1,78 @@
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+float u2f(uint x);
+uint hash(uint x);
+float h(float x);
+float value_noise_1D_hermite(float p);
+
+float fractional_brownian_motion(float p);
+float sumOfMaxAmplitudes(float a, float n);
+
+float fade_hermite(float t);
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+float _Period;
+float _Gain, _Lacunarity;
+int _Octaves;
+RWTexture2D<float4> Result;
+
+[numthreads(256,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    // TODO: insert actual code here
+    
+    float value = fractional_brownian_motion(float(id.x) / _Period);
+    float m = sumOfMaxAmplitudes(_Gain, _Octaves);
+    value = (value + m) / (2 * m); // revert domain to [0,1) so it can fit in color value
+    Result[id.xy] = float4(value, value, value, 1.0);
+     
+    
+}
+
+float fractional_brownian_motion(float p)
+{
+    float sum = 0;
+    float amp = 1.0, freq = 1.0;
+    for (int i = 0; i < _Octaves; i++)
+    {
+        float noise = value_noise_1D_hermite(p * freq);
+        sum += amp * noise;
+        
+        amp *= _Gain;
+        freq *= _Lacunarity;
+    }
+    
+    return sum;
+}
+
+float value_noise_1D_hermite(float p)
+{
+    int i = floor(p);
+    float f = frac(p);
+    float a = fade_hermite(f);
+    return lerp(h(i), h(i + 1), a);
+}
+
+float h(float x)
+{
+    return u2f(hash(x)) * 2.0 - 1.0;
+    // change domain from [0,1) to [-1, 1)
+}
+
+uint hash(uint x)
+{
+    x = (x ^ (x >> 16)) * 0x21f0aaadU;
+    x = (x ^ (x >> 15)) * 0x735a2d97U;
+    
+    return x ^ (x >> 15);
+}
+float u2f(uint x) { return float(x >> 8U) * asfloat(0x33800000U); }
+
+float sumOfMaxAmplitudes(float a, float n)
+{
+    if (n < 1) n = 1;
+    return ((a * (pow(a, n - 1) - 1) ) / (a - 1)) + 1;
+}
+
+float fade_hermite(float t) { return (3.0 - 2.0*t)*t*t;}
