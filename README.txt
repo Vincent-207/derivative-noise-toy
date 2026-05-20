@@ -1,7 +1,7 @@
 An interactive toy that contains various forms of procedural noise commonly used in terrain generation.
 Manipulate 1D & 2D versions of many algorithms. You can also view 2D algorithms applied as a height map in 3D. 
-Play here: 
-Current algorithms: https://snipermonkey2.itch.io/noise-toy
+Play here: https://snipermonkey2.itch.io/noise-toy
+Current algorithms: 
 
 (1D)
 ValueLinear,
